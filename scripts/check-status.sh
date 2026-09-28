@@ -1,0 +1,20 @@
+#!/usr/bin/env bash
+
+NAMESPACE="k8s-lab"
+
+echo "=== k8s-lab Status ==="
+echo ""
+echo "--- Pods ---"
+kubectl get pods -n "${NAMESPACE}" -o wide 2>/dev/null || echo "(no pods found)"
+echo ""
+echo "--- Deployments ---"
+kubectl get deployments -n "${NAMESPACE}" 2>/dev/null || echo "(no deployments found)"
+echo ""
+echo "--- Services ---"
+kubectl get svc -n "${NAMESPACE}" 2>/dev/null || echo "(no services found)"
+echo ""
+echo "--- PVCs ---"
+kubectl get pvc -n "${NAMESPACE}" 2>/dev/null || echo "(no PVCs found)"
+echo ""
+echo "--- Recent Events (warnings/errors) ---"
+kubectl get events -n "${NAMESPACE}" --sort-by=.metadata.creationTimestamp 2>/dev/null | grep -iE 'error|warn|failed|crash|oom' || echo "(no recent errors/warnings)"

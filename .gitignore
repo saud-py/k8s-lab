@@ -1,0 +1,11 @@
+# Minikube state
+minikube/
+*.log
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Kubernetes
+kubectl-*.pid
+*.tmp
