@@ -71,21 +71,23 @@ Remove the entire environment:
 ./scripts/teardown.sh
 ```
 
-## Available Issues (11 total)
+## Available Issues (13 total)
 
-| # | Issue | What it teaches |
-|---|-------|----------------|
-| 01 | CrashLoopBackOff | Pod restart loops, checking previous logs |
-| 02 | OOMKilled | Resource limits, memory pressure |
-| 03 | ImagePullBackOff (non-existent) | Image errors, Docker Hub connectivity |
-| 04 | ImagePullBackOff (auth) | Private registry auth, credentials |
-| 05 | ConfigError | Bad configuration, invalid manifests |
-| 06 | Service Mesh Down | Service deletion, DNS resolution |
-| 07 | PVC Failed Binding | Storage issues, storage classes |
-| 08 | Node Pressure | Taints, evictions, scheduling |
-| 09 | Readiness Probe Failure | Pod readiness, health checks |
-| 10 | Rollout Stuck | Paused rollouts, version management |
-| 11 | Liveness Probe Failure | Restart policies, container health |
+| # | Issue | Level | What it teaches |
+|---|-------|-------|----------------|
+| 01 | CrashLoopBackOff | Beginner | Pod restart loops, checking previous logs |
+| 02 | OOMKilled | Beginner | Resource limits, memory pressure |
+| 03 | ImagePullBackOff (non-existent) | Beginner | Image errors, Docker Hub connectivity |
+| 04 | ImagePullBackOff (auth) | Beginner | Private registry auth, credentials |
+| 05 | ConfigError | Beginner | Bad configuration, invalid manifests |
+| 06 | Service Mesh Down | Intermediate | Service deletion, DNS resolution, endpoints |
+| 07 | PVC Failed Binding | Intermediate | Storage issues, storage classes |
+| 08 | Node Pressure | Intermediate | Taints, evictions, scheduling |
+| 09 | Readiness Probe Failure | Intermediate | Pod readiness, health checks |
+| 10 | Rollout Stuck | Intermediate | Paused rollouts, version management |
+| 11 | Liveness Probe Failure | Intermediate | Restart policies, container health |
+| 12 | HPA Failure | Intermediate | Autoscaling, metrics-server, custom metrics |
+| 13 | DNS Failure | Beginner | Service DNS resolution, nslookup |
 
 ## Key Kubernetes Commands You'll Use
 

@@ -25,6 +25,6 @@ echo ""
 echo "=== Verification ==="
 POD=$(kubectl get pods -n "${NAMESPACE}" -l app=backend -o jsonpath='{.items[0].metadata.name}')
 echo "Testing backend health endpoint..."
-kubectl exec -n "${NAMESPACE}" "${POD}" -- wget -qO- http://localhost/api/health
+kubectl exec -n "${NAMESPACE}" "${POD}" -- curl -s http://localhost/api/health
 echo ""
 echo "Fixed! Backend is running the correct image."

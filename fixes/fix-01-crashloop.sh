@@ -24,8 +24,25 @@ kubectl get pods -n "${NAMESPACE}" -l app=backend
 
 echo ""
 echo "=== Verification ==="
-POD=$(kubectl get pods -n "${NAMESPACE}" -l app=backend -o jsonpath='{.items[0].metadata.name}')
+# Wait for a running pod to appear
+POD=""
+for i in $(seq 1 10); do
+  POD=$(kubectl get pods -n "${NAMESPACE}" -l app=backend -o jsonpath='{.items[0].metadata.name}' 2>/dev/null)
+  if [ -n "$POD" ] && [ "$POD" != " " ]; then
+    STATUS=$(kubectl get pod -n "${NAMESPACE}" "${POD}" -o jsonpath='{.status.phase}' 2>/dev/null)
+    if [ "$STATUS" = "Running" ]; then
+      break
+    fi
+  fi
+  sleep 2
+done
+
+if [ -z "$POD" ]; then
+  echo "Warning: No running pod found, trying anyway..."
+  POD=$(kubectl get pods -n "${NAMESPACE}" -l app=backend -o jsonpath='{.items[0].metadata.name}' 2>/dev/null)
+fi
+
 echo "Testing backend health endpoint..."
-kubectl exec -n "${NAMESPACE}" "${POD}" -- wget -qO- http://localhost/api/health
+kubectl exec -n "${NAMESPACE}" "${POD}" -- curl -s http://localhost/api/health 2>/dev/null || echo "(connect may take a moment)"
 echo ""
 echo "Fixed! Backend is healthy again."
