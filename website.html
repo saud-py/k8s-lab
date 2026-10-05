@@ -1,0 +1,585 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="viewport-fit=cover">
+  <title>k8s-lab Dashboard</title>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
+  <style>
+    :root {
+      --bg: #f4f6fa;
+      --bg-alt: #ffffff;
+      --fg: #1a2233;
+      --muted: #6b7280;
+      --accent: #0069d9;
+      --up: #198754;
+      --down: #dc3545;
+      --degraded: #e6a817;
+      --card: #ffffff;
+      --border: #e3e8f0;
+      --critical-bg: #fef2f2;
+      --critical-fg: #991b1b;
+      --radius: 10px;
+      --shadow: 0 1px 3px rgba(0,0,0,.08), 0 1px 2px rgba(0,0,0,.06);
+      --shadow-hover: 0 4px 12px rgba(0,0,0,.1);
+    }
+    @media (prefers-color-scheme: dark) {
+      :root:not([data-theme="light"]) {
+        --bg: #0d1117;
+        --bg-alt: #161b22;
+        --fg: #e6edf3;
+        --muted: #8b949e;
+        --accent: #58a6ff;
+        --up: #3fb950;
+        --down: #f85149;
+        --degraded: #d2991d;
+        --card: #161b22;
+        --border: #30363d;
+        --critical-bg: #2d1117;
+        --critical-fg: #f85149;
+        --shadow: 0 1px 3px rgba(0,0,0,.3);
+        --shadow-hover: 0 4px 12px rgba(0,0,0,.4);
+      }
+    }
+    :root[data-theme="dark"] {
+      --bg: #0d1117;
+      --bg-alt: #161b22;
+      --fg: #e6edf3;
+      --muted: #8b949e;
+      --accent: #58a6ff;
+      --up: #3fb950;
+      --down: #f85149;
+      --degraded: #d2991d;
+      --card: #161b22;
+      --border: #30363d;
+      --critical-bg: #2d1117;
+      --critical-fg: #f85149;
+    }
+    :root[data-theme="light"] {
+      --bg: #f4f6fa;
+      --bg-alt: #ffffff;
+      --fg: #1a2233;
+      --muted: #6b7280;
+      --accent: #0069d9;
+      --up: #198754;
+      --down: #dc3545;
+      --degraded: #e6a817;
+      --card: #ffffff;
+      --border: #e3e8f0;
+      --critical-bg: #fef2f2;
+      --critical-fg: #991b1b;
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      font-family: 'Inter', system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--fg);
+      margin: 0;
+      padding: env(safe-area-inset-top, 0px) 24px env(safe-area-inset-bottom, 0px);
+      min-height: 100vh;
+      line-height: 1.5;
+      color-scheme: light dark;
+    }
+
+    /* Header */
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-bottom: 1.5rem;
+    }
+    header h1 { font-size: 1.4rem; font-weight: 700; margin: 0; letter-spacing: -0.02em; }
+    .header-right { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+
+    /* Status pill */
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 12px;
+      border-radius: 999px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      letter-spacing: 0.02em;
+      border: 1px solid transparent;
+    }
+    .pill-up { background: #dafbe6; color: #0e6b38; border-color: #b7e4c7; }
+    .pill-degraded { background: #fff3cd; color: #8a5d00; border-color: #ffeeba; }
+    .pill-down { background: #fce4e4; color: #a71d2a; border-color: #f5c6cb; }
+    .pill-critical { background: #fce4e4; color: #a71d2a; border-color: #f5c6cb; animation: pulse 1.6s infinite; }
+    @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: .6; } }
+
+    /* Critical banner */
+    .critical-banner {
+      display: none;
+      background: var(--critical-bg);
+      color: var(--critical-fg);
+      border: 1px solid var(--down);
+      border-radius: var(--radius);
+      padding: 14px 18px;
+      margin-bottom: 1.5rem;
+      font-weight: 600;
+      font-size: 0.95rem;
+    }
+    .critical-banner.visible { display: block; }
+
+    /* Topology */
+    .topology {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.25rem;
+      margin-bottom: 1.5rem;
+      box-shadow: var(--shadow);
+    }
+    .topology h2 { font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); margin: 0 0 1rem; font-weight: 600; }
+    .topo-svg { width: 100%; max-width: 700px; display: block; margin: 0 auto; }
+    .topo-node { cursor: pointer; transition: filter .2s; }
+    .topo-node:hover { filter: brightness(1.1); }
+    .topo-node rect { rx: 8; ry: 8; stroke-width: 2.5; transition: stroke .3s, fill .3s; }
+    .topo-node text { font-family: 'Inter', sans-serif; font-size: 12px; font-weight: 600; fill: var(--fg); pointer-events: none; }
+    .topo-node .sub { font-size: 10px; fill: var(--muted); font-weight: 400; }
+    .topo-edge { stroke: var(--border); stroke-width: 2; fill: none; marker-end: url(#arrow); }
+    .topo-edge.down { stroke: var(--down); stroke-dasharray: 6 3; }
+    .topo-label { font-family: 'Inter', sans-serif; font-size: 10px; fill: var(--muted); }
+
+    /* Service cards */
+    .cards-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+    }
+    .svc-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.1rem 1.2rem;
+      box-shadow: var(--shadow);
+      transition: box-shadow .2s, border-color .3s;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+    .svc-card:hover { box-shadow: var(--shadow-hover); }
+    .svc-card.down { border-color: var(--down); }
+    .svc-card.degraded { border-color: var(--degraded); }
+    .svc-card .row { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+    .svc-card .name { font-weight: 600; font-size: 1rem; }
+    .svc-card .endpoint { font-family: monospace; font-size: 0.8rem; color: var(--muted); background: var(--bg); padding: 2px 8px; border-radius: 4px; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; }
+    .svc-card .endpoint:hover { background: var(--border); }
+    .svc-card .msg { font-size: 0.82rem; min-height: 1.4em; }
+    .svc-card .msg.ok { color: var(--up); }
+    .svc-card .msg.err { color: var(--down); }
+    .svc-card .msg.warn { color: var(--degraded); }
+
+    /* Buttons */
+    button {
+      font-family: inherit;
+      cursor: pointer;
+      border: 1px solid var(--border);
+      background: var(--bg-alt);
+      color: var(--fg);
+      padding: 6px 14px;
+      border-radius: 6px;
+      font-size: 0.82rem;
+      font-weight: 500;
+      transition: background .15s, border-color .15s;
+    }
+    button:hover { background: var(--bg); }
+    button.primary { background: var(--accent); color: #fff; border-color: var(--accent); }
+    button.primary:hover { opacity: .9; }
+    button.danger { background: var(--down); color: #fff; border-color: var(--down); }
+    button.danger:hover { opacity: .9; }
+    button.warn { background: var(--degraded); color: #1a2233; border-color: var(--degraded); }
+    button.sm { padding: 4px 10px; font-size: 0.78rem; }
+    button:disabled { opacity: .5; cursor: not-allowed; }
+
+    /* Panels */
+    .panel {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.25rem;
+      margin-bottom: 1.5rem;
+      box-shadow: var(--shadow);
+    }
+    .panel h2 { font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); margin: 0 0 1rem; font-weight: 600; }
+
+    /* Issue grid */
+    .issue-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+      gap: 0.6rem;
+    }
+    .issue-btn {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      text-align: left;
+      padding: 8px 12px;
+    }
+    .issue-btn .num { font-weight: 700; color: var(--accent); min-width: 24px; }
+    .issue-btn .lvl { font-size: 0.68rem; padding: 2px 6px; border-radius: 999px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; }
+    .lvl-beginner { background: #dafbe6; color: #0e6b38; }
+    .lvl-intermediate { background: #fff3cd; color: #8a5d00; }
+    :root[data-theme="dark"] .lvl-beginner { background: #1b3a2b; color: #56d364; }
+    :root[data-theme="dark"] .lvl-intermediate { background: #3a2e0a; color: #d2991d; }
+    .issue-btn .name { font-weight: 500; }
+
+    /* Log */
+    .log { max-height: 220px; overflow-y: auto; font-size: 0.8rem; font-family: monospace; background: var(--bg); border-radius: 8px; padding: 10px; border: 1px solid var(--border); }
+    .log-entry { padding: 3px 0; border-bottom: 1px solid var(--border); opacity: 0; animation: fadeIn .3s forwards; }
+    .log-entry:last-child { border-bottom: none; }
+    @keyframes fadeIn { to { opacity: 1; } }
+    .log-ts { color: var(--muted); }
+    .log-ok { color: var(--up); }
+    .log-err { color: var(--down); }
+    .log-info { color: var(--accent); }
+
+    /* Actions row */
+    .actions { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+
+    /* Footer */
+    footer { text-align: center; color: var(--muted); font-size: 0.78rem; margin-top: 2rem; padding-top: 1rem; border-top: 1px solid var(--border); }
+
+    /* Responsive */
+    @media (max-width: 600px) {
+      header { flex-direction: column; align-items: flex-start; }
+      .cards-grid { grid-template-columns: 1fr; }
+      .issue-grid { grid-template-columns: 1fr; }
+    }
+
+    /* Copy toast */
+    .toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: var(--fg); color: var(--bg); padding: 8px 18px; border-radius: 8px; font-size: 0.85rem; opacity: 0; transition: opacity .3s; pointer-events: none; z-index: 1000; }
+    .toast.show { opacity: 1; }
+  </style>
+</head>
+<body>
+  <header>
+    <div>
+      <h1>k8s-lab Dashboard</h1>
+    </div>
+    <div class="header-right">
+      <span id="globalPill" class="pill pill-up">● All Systems Operational</span>
+      <button id="btnRefresh" class="sm primary" onclick="refreshAll()">Refresh Status</button>
+      <button onclick="resetAll()" class="sm danger">Reset All</button>
+      <button onclick="toggleTheme()" class="sm">◐ Theme</button>
+    </div>
+  </header>
+
+  <div id="criticalBanner" class="critical-banner">⚠ Website down — the frontend service is currently unavailable (OOM / ImagePull / Node Pressure).</div>
+
+  <div class="topology">
+    <h2>Service Topology</h2>
+    <svg class="topo-svg" viewBox="0 0 700 340" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <marker id="arrow" viewBox="0 0 10 6" refX="10" refY="3" markerWidth="10" markerHeight="6" orient="auto-start-reverse">
+          <path d="M 0 0 L 10 3 L 0 6 z" fill="var(--border)" />
+        </marker>
+        <filter id="glowDown"><feDropShadow dx="0" dy="0" stdDeviation="4" flood-color="#dc3545" flood-opacity="0.6"/></filter>
+        <filter id="glowUp"><feDropShadow dx="0" dy="0" stdDeviation="3" flood-color="#198754" flood-opacity="0.5"/></filter>
+      </defs>
+      <!-- frontend → backend -->
+      <line x1="400" y1="90" x2="400" y2="140" class="topo-edge" id="edge1" />
+      <!-- backend → redis -->
+      <line x1="290" y1="210" x2="200" y2="250" class="topo-edge" id="edge2" />
+      <!-- backend → mysql -->
+      <line x1="510" y1="210" x2="600" y2="250" class="topo-edge" id="edge3" />
+      <!-- frontend -->
+      <g class="topo-node" id="node-frontend" onclick="checkEndpoint('frontend')" style="cursor:pointer">
+        <rect x="350" y="40" width="200" height="50" rx="8" id="rect-frontend" fill="var(--card)" stroke="var(--up)" />
+        <text x="450" y="62" text-anchor="middle">frontend</text>
+        <text x="450" y="78" text-anchor="middle" class="sub">ClusterIP :80</text>
+      </g>
+      <!-- backend -->
+      <g class="topo-node" id="node-backend" onclick="checkEndpoint('backend')" style="cursor:pointer">
+        <rect x="350" y="150" width="200" height="50" rx="8" id="rect-backend" fill="var(--card)" stroke="var(--up)" />
+        <text x="450" y="172" text-anchor="middle">backend</text>
+        <text x="450" y="188" text-anchor="middle" class="sub">ClusterIP :80</text>
+      </g>
+      <!-- redis -->
+      <g class="topo-node" id="node-redis" onclick="checkEndpoint('redis')" style="cursor:pointer">
+        <rect x="150" y="260" width="180" height="50" rx="8" id="rect-redis" fill="var(--card)" stroke="var(--up)" />
+        <text x="240" y="282" text-anchor="middle">redis</text>
+        <text x="240" y="298" text-anchor="middle" class="sub">ClusterIP :6379</text>
+      </g>
+      <!-- mysql -->
+      <g class="topo-node" id="node-mysql" onclick="checkEndpoint('mysql')" style="cursor:pointer">
+        <rect x="520" y="260" width="180" height="50" rx="8" id="rect-mysql" fill="var(--card)" stroke="var(--up)" />
+        <text x="610" y="282" text-anchor="middle">mysql</text>
+        <text x="610" y="298" text-anchor="middle" class="sub">ClusterIP :3306</text>
+      </g>
+    </svg>
+  </div>
+
+  <div class="cards-grid" id="cardsGrid"></div>
+
+  <div class="panel">
+    <h2>Inject Issues — simulate failures</h2>
+    <div style="margin-bottom: 1rem;">
+      <span class="lvl-beginner" style="margin-right:8px">Beginner</span>
+      <span class="lvl-intermediate" style="margin-right:8px">Intermediate</span>
+      <span style="font-size:.78rem;color:var(--muted)">Click an issue to inject it — the dashboard reflects the failure.</span>
+    </div>
+    <div class="issue-grid" id="issueGrid"></div>
+  </div>
+
+  <div class="panel">
+    <h2>Activity Log</h2>
+    <div class="log" id="activityLog"><div class="log-entry log-info">Dashboard initialized — all services up.</div></div>
+    <div style="margin-top: 8px; display:flex; gap: 8px;">
+      <button class="sm" onclick="clearLog()">Clear Log</button>
+    </div>
+  </div>
+
+  <footer>k8s-lab Dashboard — simulates Kubernetes cluster failures for learning purposes. Not connected to a real cluster; state is local to this page.</footer>
+
+  <div id="toast" class="toast"></div>
+
+  <script>
+    /* ---- State ---- */
+    const services = {
+      frontend: { dns: 'frontend.k8s-lab.svc.cluster.local', ip: '10.96.10.10', port: 80,  status: 'up',   msg: '' },
+      backend:  { dns: 'backend.k8s-lab.svc.cluster.local',  ip: '10.96.10.11', port: 80,  status: 'up',   msg: '' },
+      redis:    { dns: 'redis.k8s-lab.svc.cluster.local',    ip: '10.96.10.12', port: 6379, status: 'up',  msg: '' },
+      mysql:    { dns: 'mysql.k8s-lab.svc.cluster.local',    ip: '10.96.10.13', port: 3306, status: 'up', msg: '' },
+    };
+
+    const issues = [
+      { id: '01', name: 'CrashLoopBackOff', level: 'Beginner', svc: 'backend', status: 'down', msg: '✗ Container in CrashLoopBackOff — endpoint unreachable', downMsg: 'Container crash-looping; no active endpoints' },
+      { id: '02', name: 'OOMKilled', level: 'Beginner', svc: 'backend', status: 'down', msg: '✗ Container OOMKilled — website (frontend) goes down', downMsg: 'OOMKilled; backend unreachable, frontend cascading fail' },
+      { id: '03', name: 'ImagePullError (non-existent)', level: 'Beginner', svc: 'backend', status: 'down', msg: '✗ ImagePullError — pod never started', downMsg: 'Image not found; pod never created' },
+      { id: '04', name: 'ImagePullBackOff (auth)', level: 'Beginner', svc: 'backend', status: 'down', msg: '✗ ImagePullBackOff — private registry auth failure', downMsg: 'Auth failure pulling image; pod never started' },
+      { id: '05', name: 'ConfigError', level: 'Beginner', svc: 'backend', status: 'down', msg: '✗ Bad config — pod exited with exit code 1', downMsg: 'Invalid nginx.conf; container terminated' },
+      { id: '06', name: 'Service Mesh Down', level: 'Intermediate', svc: 'backend', status: 'down', msg: '✗ Service deleted — DNS resolution fails', downMsg: 'Service missing; DNS NXDOMAIN for backend' },
+      { id: '07', name: 'PVC Failed Binding', level: 'Intermediate', svc: 'mysql', status: 'down', msg: '✗ PVC unbound — MySQL pod Pending', downMsg: 'No storage class available; PVC Pending' },
+      { id: '08', name: 'Node Pressure', level: 'Intermediate', svc: 'all', status: 'down', msg: '✗ Node unschedulable — all pods evicted', downMsg: 'Node under pressure; all pods evicted' },
+      { id: '09', name: 'Readiness Probe Failure', level: 'Intermediate', svc: 'backend', status: 'degraded', msg: '⚠ Pod not Ready — traffic excluded, but endpoint exists', downMsg: '' },
+      { id: '10', name: 'Rollout Stuck', level: 'Intermediate', svc: 'backend', status: 'degraded', msg: '⚠ Rollout paused — old pods still serving', downMsg: '' },
+      { id: '11', name: 'Liveness Probe Failure', level: 'Intermediate', svc: 'backend', status: 'down', msg: '✗ Liveness failed — container restarted, endpoint flapping', downMsg: 'Liveness failure; pod in restart loop' },
+      { id: '12', name: 'HPA Failure', level: 'Intermediate', svc: 'frontend', status: 'degraded', msg: '⚠ HPA misconfigured — metrics unavailable, scaling frozen', downMsg: '' },
+      { id: '13', name: 'DNS Failure', level: 'Beginner', svc: 'backend', status: 'down', msg: '✗ DNS lookup failed — endpoint not resolvable', downMsg: 'DNS resolution failed; no Service endpoint for backend' },
+    ];
+
+    const activeIssues = new Set();
+    const logEl = document.getElementById('activityLog');
+    const banner = document.getElementById('criticalBanner');
+
+    /* ---- Rendering ---- */
+    function renderCards() {
+      const grid = document.getElementById('cardsGrid');
+      grid.innerHTML = '';
+      for (const [key, svc] of Object.entries(services)) {
+        const card = document.createElement('div');
+        card.className = 'svc-card ' + svc.status;
+        card.id = 'card-' + key;
+        card.innerHTML = `
+          <div class="row">
+            <span class="name">${key}</span>
+            <span class="pill ${svc.status === 'up' ? 'pill-up' : svc.status === 'degraded' ? 'pill-degraded' : 'pill-down'}">${svc.status.toUpperCase()}</span>
+          </div>
+          <div class="endpoint" onclick="copyDNS('${key}')" title="Click to copy DNS">
+            <span>🌐</span> ${svc.dns}:${svc.port}
+          </div>
+          <div style="font-size:.78rem;color:var(--muted)">ClusterIP: ${svc.ip}:${svc.port}</div>
+          <div class="msg ${svc.msg.includes('✗') ? 'err' : svc.msg.includes('⚠') ? 'warn' : svc.msg ? 'ok' : ''}" id="msg-${key}">${svc.msg || '—'}</div>
+          <button class="sm primary" onclick="checkEndpoint('${key}')">Check Endpoint</button>
+        `;
+        grid.appendChild(card);
+      }
+    }
+
+    function renderIssues() {
+      const grid = document.getElementById('issueGrid');
+      grid.innerHTML = '';
+      for (const iss of issues) {
+        const btn = document.createElement('button');
+        btn.className = 'issue-btn' + (activeIssues.has(iss.id) ? ' disabled' : '');
+        btn.disabled = activeIssues.has(iss.id);
+        btn.innerHTML = `
+          <span class="num">#${iss.id}</span>
+          <span class="lvl lvl-${iss.level.toLowerCase()}">${iss.level}</span>
+          <span class="name">${iss.name}</span>
+        `;
+        btn.onclick = () => injectIssue(iss);
+        grid.appendChild(btn);
+      }
+    }
+
+    /* ---- Actions ---- */
+    function injectIssue(iss) {
+      if (activeIssues.has(iss.id)) return;
+      activeIssues.add(iss.id);
+
+      if (iss.svc === 'all') {
+        Object.keys(services).forEach(k => { services[k].status = iss.status; services[k].msg = iss.msg; });
+      } else {
+        services[iss.svc].status = iss.status;
+        services[iss.svc].msg = iss.msg;
+        /* OOM cascades to frontend */
+        if (iss.id === '02' && iss.svc === 'backend') {
+          services.frontend.status = 'down';
+          services.frontend.msg = '✗ Cascading failure — backend OOM, frontend unavailable';
+        }
+      }
+
+      updateTopology();
+      renderCards();
+      renderIssues();
+      updateGlobalPill();
+      addLog(iss.id, iss.name, 'injected');
+      logEvent('inject', iss.id, iss.name);
+    }
+
+    function checkEndpoint(key) {
+      const svc = services[key];
+      const btn = document.querySelector('#card-' + key + ' button');
+      if (!btn) return;
+      btn.disabled = true;
+      btn.textContent = 'Checking…';
+
+      const delay = svc.status === 'up' ? 80 + Math.random() * 120 : 1200 + Math.random() * 800;
+      setTimeout(() => {
+        let msg;
+        if (svc.status === 'up') {
+          const ms = Math.round(5 + Math.random() * 45);
+          msg = `✓ Endpoint accessible — HTTP 200 (${ms}ms)`;
+          svc.msg = '';
+        } else {
+          const reasons = {
+            backend: ['Connection refused — no active pod endpoints', 'DNS NXDOMAIN — service not found', 'Timeout — pod unreachable', 'Connection reset by peer'],
+            frontend: ['Connection refused — frontend pod down', '502 Bad Gateway — no upstream', 'Timeout — service unavailable'],
+            redis: ['Connection refused — Redis not responding', 'ERR max number of clients reached'],
+            mysql: ['Connection refused — MySQL not ready', 'ERROR 2003 (HY000): Can\'t connect to MySQL'],
+          };
+          const pool = reasons[key] || reasons.backend;
+          msg = '✗ ' + pool[Math.floor(Math.random() * pool.length)];
+        }
+        svc.msg = msg;
+        renderCards();
+        addLog(key, msg, svc.status === 'up' ? 'ok' : 'err');
+        logEvent('check', key, msg);
+        btn.disabled = false;
+        btn.textContent = 'Check Endpoint';
+      }, delay);
+    }
+
+    function refreshAll() {
+      Object.keys(services).forEach(k => { if (services[k].status === 'up') services[k].msg = ''; });
+      renderCards();
+      addLog('all', 'Status refreshed', 'info');
+    }
+
+    function resetAll() {
+      activeIssues.clear();
+      Object.keys(services).forEach(k => {
+        services[k].status = 'up';
+        services[k].msg = '';
+      });
+      updateTopology();
+      renderCards();
+      renderIssues();
+      updateGlobalPill();
+      banner.classList.remove('visible');
+      addLog('reset', 'All issues cleared — cluster healthy', 'ok');
+    }
+
+    /* ---- Topology ---- */
+    function updateTopology() {
+      for (const key of ['frontend', 'backend', 'redis', 'mysql']) {
+        const rect = document.getElementById('rect-' + key);
+        const node = document.getElementById('node-' + key);
+        const s = services[key].status;
+        rect.setAttribute('stroke', s === 'up' ? 'var(--up)' : s === 'degraded' ? 'var(--degraded)' : 'var(--down)');
+        rect.setAttribute('fill', s === 'down' ? '#fef0f0' : 'var(--card)');
+        node.style.filter = s === 'down' ? 'url(#glowDown)' : s === 'degraded' ? '' : 'url(#glowUp)';
+      }
+      /* edges */
+      const bDown = services.backend.status === 'down';
+      document.getElementById('edge1').classList.toggle('down', bDown);
+      document.getElementById('edge2').classList.toggle('down', bDown);
+      document.getElementById('edge3').classList.toggle('down', bDown);
+    }
+
+    /* ---- Global pill ---- */
+    function updateGlobalPill() {
+      const pill = document.getElementById('globalPill');
+      const anyDown = Object.values(services).some(s => s.status === 'down');
+      const anyDegraded = Object.values(services).some(s => s.status === 'degraded');
+      if (anyDown) { pill.className = 'pill pill-critical'; pill.textContent = '● Critical — Service Down'; }
+      else if (anyDegraded) { pill.className = 'pill pill-degraded'; pill.textContent = '● Degraded'; }
+      else { pill.className = 'pill pill-up'; pill.textContent = '● All Systems Operational'; }
+
+      /* critical banner for website down */
+      if (services.frontend.status === 'down') {
+        banner.classList.add('visible');
+      } else {
+        banner.classList.remove('visible');
+      }
+    }
+
+    /* ---- Log ---- */
+    function addLog(subject, msg, type) {
+      const ts = new Date().toLocaleTimeString();
+      const entry = document.createElement('div');
+      entry.className = 'log-entry log-' + type;
+      entry.innerHTML = `<span class="log-ts">[${ts}]</span> <strong>${subject}</strong>: ${msg}`;
+      logEl.prepend(entry);
+    }
+    function clearLog() { logEl.innerHTML = ''; addLog('system', 'Log cleared', 'info'); }
+
+    function logEvent(type, id, detail) {
+      /* persist to sessionStorage so it survives a refresh */
+      try {
+        const key = 'k8slab_log';
+        const log = JSON.parse(sessionStorage.getItem(key) || '[]');
+        log.push({ type, id, detail, ts: Date.now() });
+        sessionStorage.setItem(key, JSON.stringify(log.slice(-200)));
+      } catch (e) { /* storage disabled */ }
+    }
+
+    /* ---- Theme ---- */
+    function toggleTheme() {
+      const html = document.documentElement;
+      const cur = html.getAttribute('data-theme');
+      const next = cur === 'dark' ? 'light' : 'dark';
+      html.setAttribute('data-theme', next);
+      try { sessionStorage.setItem('k8s-lab-theme', next); } catch (e) {}
+      updateTopology();
+    }
+    (function () {
+      try {
+        const t = sessionStorage.getItem('k8s-lab-theme');
+        if (t === 'dark' || t === 'light') document.documentElement.setAttribute('data-theme', t);
+      } catch (e) {}
+    })();
+
+    /* ---- Copy DNS ---- */
+    function copyDNS(key) {
+      const dns = services[key].dns;
+      navigator.clipboard.writeText(dns).then(() => showToast(`Copied ${dns}`)).catch(() => {
+        /* fallback */
+        const ta = document.createElement('textarea');
+        ta.value = dns; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); ta.remove();
+        showToast(`Copied ${dns}`);
+      });
+    }
+    function showToast(msg) {
+      const t = document.getElementById('toast');
+      t.textContent = msg;
+      t.classList.add('show');
+      setTimeout(() => t.classList.remove('show'), 1800);
+    }
+
+    /* ---- Init ---- */
+    renderCards();
+    renderIssues();
+    updateTopology();
+    updateGlobalPill();
+  </script>
+</body>
+</html>
