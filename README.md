@@ -14,6 +14,11 @@ This project provides a self-contained environment for learning Kubernetes comma
 ```
 k8s-lab/
 ├── base/              # Base Kubernetes manifests (namespace, services, deployments, etc.)
+│   ├── website/       # The website service (serves the dashboard page)
+│   ├── frontend/      # Legacy static frontend (kept for reference)
+│   ├── backend/       # Backend API
+│   ├── redis/         # Cache layer
+│   └── mysql/         # Persistent database
 ├── issues/            # Scripts that inject mock production issues
 ├── fixes/             # Corresponding fix scripts
 ├── scripts/           # Utility scripts (setup, teardown, status check)
@@ -44,7 +49,7 @@ Each issue script (`issues/XX-*.sh`) deliberately breaks one aspect of the appli
 ./issues/01-crashloop-backoff.sh
 ./issues/02-oomkilled.sh
 ./issues/03-image-pull-error.sh
-# ... etc
+# ... etc up to issue 14
 ```
 
 Each script:
@@ -60,7 +65,7 @@ After injecting an issue, run the corresponding fix script:
 ./fixes/fix-01-crashloop.sh
 ./fixes/fix-02-oomkilled.sh
 ./fixes/fix-03-image-pull-error.sh
-# ... etc
+# ... etc up to fix 14
 ```
 
 ### Tearing Down
@@ -71,7 +76,7 @@ Remove the entire environment:
 ./scripts/teardown.sh
 ```
 
-## Available Issues (13 total)
+## Available Issues (14 total)
 
 | # | Issue | Level | What it teaches |
 |---|-------|-------|----------------|
@@ -88,6 +93,7 @@ Remove the entire environment:
 | 11 | Liveness Probe Failure | Intermediate | Restart policies, container health |
 | 12 | HPA Failure | Intermediate | Autoscaling, metrics-server, custom metrics |
 | 13 | DNS Failure | Beginner | Service DNS resolution, nslookup |
+| 14 | Website CrashLoopBackOff | Beginner | Service dependency, cascading failure |
 
 ## Key Kubernetes Commands You'll Use
 
@@ -116,7 +122,7 @@ Basic commands:
 2. **Observe healthy state**: Use `./scripts/check-status.sh` to confirm all pods are Ready.
 3. **Inject issues**: Run each issue script to learn how to detect the problem.
 4. **Fix issues**: Run the corresponding fix script to remediate.
-5. **Repeat** for all 11 issues.
+5. **Repeat** for all 14 issues.
 6. **Teardown**: Clean up with `./scripts/teardown.sh` when done.
 
 ## Assumptions

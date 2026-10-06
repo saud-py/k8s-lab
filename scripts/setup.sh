@@ -11,6 +11,7 @@ kubectl create namespace "${NAMESPACE}" --dry-run=client -o yaml | kubectl apply
 echo "Applying base manifests..."
 kubectl apply -f "${BASE_DIR}/namespace.yaml"
 kubectl apply -f "${BASE_DIR}/frontend/"
+kubectl apply -f "${BASE_DIR}/website/"
 kubectl apply -f "${BASE_DIR}/backend/"
 kubectl apply -f "${BASE_DIR}/redis/"
 kubectl apply -f "${BASE_DIR}/mysql/"

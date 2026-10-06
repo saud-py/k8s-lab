@@ -10,11 +10,11 @@ NAMESPACE="k8s-lab"
 
 echo "=== Injecting Issue 12: HPA Failure ==="
 echo "Removing the HPA and replacing with a misconfigured one that references"
-echo "a non-existent metric so the HPA can never scale the frontend."
+echo "a non-existent metric so the HPA can never scale the website."
 echo ""
 
 # Delete any existing HPA first
-kubectl delete hpa frontend -n "${NAMESPACE}" --ignore-not-found || true
+kubectl delete hpa website -n "${NAMESPACE}" --ignore-not-found || true
 
 # Create a broken HPA that references a custom metric that doesn't exist.
 # The HPA controller will keep failing with "failed to get cpu utilization:
@@ -23,13 +23,13 @@ cat <<EOF | kubectl apply -f -
 apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
 metadata:
-  name: frontend
+  name: website
   namespace: ${NAMESPACE}
 spec:
   scaleTargetRef:
     apiVersion: apps/v1
     kind: Deployment
-    name: frontend
+    name: website
   minReplicas: 2
   maxReplicas: 8
   metrics:
@@ -39,7 +39,7 @@ spec:
           name: requests-per-second   # <--- this metric is not collected by metrics-server
           selector:
             matchLabels:
-              app: frontend
+              app: website
   behavior:
     scaleDown:
       stabilizationWindowSeconds: 300
@@ -50,12 +50,12 @@ sleep 4
 
 echo ""
 echo "=== Current HPA status ==="
-kubectl describe hpa/frontend -n "${NAMESPACE}"
+kubectl describe hpa/website -n "${NAMESPACE}"
 
 echo ""
 echo "=== How to diagnose ==="
 echo "  kubectl get hpa -n ${NAMESPACE}           # look for 'SLO' or low scale value"
-echo "  kubectl describe hpa/frontend -n ${NAMESPACE}  # check for failed-get-metrics"
+echo "  kubectl describe hpa/website -n ${NAMESPACE}  # check for failed-get-metrics"
 echo "  kubectl get events -n ${NAMESPACE} | grep -i hpa"
 echo "  kubectl get --raw /apis/metrics.k8s.io/v1beta1/pods  # verify metrics-server is exposing metrics"
 echo ""

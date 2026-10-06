@@ -1,0 +1,52 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: website
+  namespace: k8s-lab
+  labels:
+    app: website
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: website
+  template:
+    metadata:
+      labels:
+        app: website
+    spec:
+      initContainers:
+        - name: wait-for-backend
+          image: nginx:1.27-alpine
+          command: ['sh', '-c', 'for i in $(seq 1 60); do if curl -sf http://backend.k8s-lab.svc.cluster.local/api/health >/dev/null 2>&1; then echo "Backend is healthy, starting website..."; exit 0; fi; sleep 2; done; echo "Backend is down - website will not start"; exit 1']
+      containers:
+        - name: nginx
+          image: nginx:1.27-alpine
+          ports:
+            - containerPort: 80
+          volumeMounts:
+            - name: html
+              mountPath: /usr/share/nginx/html
+            - name: nginx-config
+              mountPath: /etc/nginx/nginx.conf
+              subPath: nginx.conf
+              readOnly: true
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 80
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /api/health
+              port: 80
+            initialDelaySeconds: 2
+            periodSeconds: 5
+      volumes:
+        - name: html
+          configMap:
+            name: website-config
+        - name: nginx-config
+          configMap:
+            name: website-config

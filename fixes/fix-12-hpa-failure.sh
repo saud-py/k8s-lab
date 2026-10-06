@@ -10,20 +10,20 @@ echo "=== Fixing Issue 12: HPA Failure ==="
 echo "Recreating the HPA with a working CPU-based metric..."
 
 # Delete the broken HPA first
-kubectl delete hpa frontend -n "${NAMESPACE}" --ignore-not-found || true
+kubectl delete hpa website -n "${NAMESPACE}" --ignore-not-found || true
 
 # Create a correct HPA that uses CPU utilization (supported by metrics-server)
 cat <<EOF | kubectl apply -f -
 apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
 metadata:
-  name: frontend
+  name: website
   namespace: ${NAMESPACE}
 spec:
   scaleTargetRef:
     apiVersion: apps/v1
     kind: Deployment
-    name: frontend
+    name: website
   minReplicas: 2
   maxReplicas: 8
   metrics:
@@ -44,11 +44,11 @@ sleep 5
 
 echo ""
 echo "=== Current HPA status ==="
-kubectl get hpa frontend -n "${NAMESPACE}" -o wide
+kubectl get hpa website -n "${NAMESPACE}" -o wide
 
 echo ""
 echo "=== HPA description ==="
-kubectl describe hpa frontend -n "${NAMESPACE}"
+kubectl describe hpa website -n "${NAMESPACE}"
 
 echo ""
 echo "Verification: HPA should show a TARGET and CURRENT value."

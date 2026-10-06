@@ -271,7 +271,7 @@
     </div>
   </header>
 
-  <div id="criticalBanner" class="critical-banner">⚠ Website down — the frontend service is currently unavailable (OOM / ImagePull / Node Pressure).</div>
+  <div id="criticalBanner" class="critical-banner">⚠ Website down — the website service is currently unavailable (backend CrashLoopBackOff / OOM / ImagePull / Node Pressure).</div>
 
   <div class="topology">
     <h2>Service Topology</h2>
@@ -283,16 +283,16 @@
         <filter id="glowDown"><feDropShadow dx="0" dy="0" stdDeviation="4" flood-color="#dc3545" flood-opacity="0.6"/></filter>
         <filter id="glowUp"><feDropShadow dx="0" dy="0" stdDeviation="3" flood-color="#198754" flood-opacity="0.5"/></filter>
       </defs>
-      <!-- frontend → backend -->
+      <!-- website → backend -->
       <line x1="400" y1="90" x2="400" y2="140" class="topo-edge" id="edge1" />
       <!-- backend → redis -->
       <line x1="290" y1="210" x2="200" y2="250" class="topo-edge" id="edge2" />
       <!-- backend → mysql -->
       <line x1="510" y1="210" x2="600" y2="250" class="topo-edge" id="edge3" />
-      <!-- frontend -->
-      <g class="topo-node" id="node-frontend" onclick="checkEndpoint('frontend')" style="cursor:pointer">
-        <rect x="350" y="40" width="200" height="50" rx="8" id="rect-frontend" fill="var(--card)" stroke="var(--up)" />
-        <text x="450" y="62" text-anchor="middle">frontend</text>
+      <!-- website -->
+      <g class="topo-node" id="node-website" onclick="checkEndpoint('website')" style="cursor:pointer">
+        <rect x="350" y="40" width="200" height="50" rx="8" id="rect-website" fill="var(--card)" stroke="var(--up)" />
+        <text x="450" y="62" text-anchor="middle">website</text>
         <text x="450" y="78" text-anchor="middle" class="sub">ClusterIP :80</text>
       </g>
       <!-- backend -->
@@ -343,7 +343,7 @@
   <script>
     /* ---- State ---- */
     const services = {
-      frontend: { dns: 'frontend.k8s-lab.svc.cluster.local', ip: '10.96.10.10', port: 80,  status: 'up',   msg: '' },
+      website:  { dns: 'website.k8s-lab.svc.cluster.local',  ip: '10.96.10.10', port: 80,  status: 'up',   msg: '' },
       backend:  { dns: 'backend.k8s-lab.svc.cluster.local',  ip: '10.96.10.11', port: 80,  status: 'up',   msg: '' },
       redis:    { dns: 'redis.k8s-lab.svc.cluster.local',    ip: '10.96.10.12', port: 6379, status: 'up',  msg: '' },
       mysql:    { dns: 'mysql.k8s-lab.svc.cluster.local',    ip: '10.96.10.13', port: 3306, status: 'up', msg: '' },
@@ -351,7 +351,7 @@
 
     const issues = [
       { id: '01', name: 'CrashLoopBackOff', level: 'Beginner', svc: 'backend', status: 'down', msg: '✗ Container in CrashLoopBackOff — endpoint unreachable', downMsg: 'Container crash-looping; no active endpoints' },
-      { id: '02', name: 'OOMKilled', level: 'Beginner', svc: 'backend', status: 'down', msg: '✗ Container OOMKilled — website (frontend) goes down', downMsg: 'OOMKilled; backend unreachable, frontend cascading fail' },
+      { id: '02', name: 'OOMKilled', level: 'Beginner', svc: 'backend', status: 'down', msg: '✗ Container OOMKilled — website goes down', downMsg: 'OOMKilled; backend unreachable, website cascading fail' },
       { id: '03', name: 'ImagePullError (non-existent)', level: 'Beginner', svc: 'backend', status: 'down', msg: '✗ ImagePullError — pod never started', downMsg: 'Image not found; pod never created' },
       { id: '04', name: 'ImagePullBackOff (auth)', level: 'Beginner', svc: 'backend', status: 'down', msg: '✗ ImagePullBackOff — private registry auth failure', downMsg: 'Auth failure pulling image; pod never started' },
       { id: '05', name: 'ConfigError', level: 'Beginner', svc: 'backend', status: 'down', msg: '✗ Bad config — pod exited with exit code 1', downMsg: 'Invalid nginx.conf; container terminated' },
@@ -361,8 +361,9 @@
       { id: '09', name: 'Readiness Probe Failure', level: 'Intermediate', svc: 'backend', status: 'degraded', msg: '⚠ Pod not Ready — traffic excluded, but endpoint exists', downMsg: '' },
       { id: '10', name: 'Rollout Stuck', level: 'Intermediate', svc: 'backend', status: 'degraded', msg: '⚠ Rollout paused — old pods still serving', downMsg: '' },
       { id: '11', name: 'Liveness Probe Failure', level: 'Intermediate', svc: 'backend', status: 'down', msg: '✗ Liveness failed — container restarted, endpoint flapping', downMsg: 'Liveness failure; pod in restart loop' },
-      { id: '12', name: 'HPA Failure', level: 'Intermediate', svc: 'frontend', status: 'degraded', msg: '⚠ HPA misconfigured — metrics unavailable, scaling frozen', downMsg: '' },
+      { id: '12', name: 'HPA Failure', level: 'Intermediate', svc: 'website', status: 'degraded', msg: '⚠ HPA misconfigured — metrics unavailable, scaling frozen', downMsg: '' },
       { id: '13', name: 'DNS Failure', level: 'Beginner', svc: 'backend', status: 'down', msg: '✗ DNS lookup failed — endpoint not resolvable', downMsg: 'DNS resolution failed; no Service endpoint for backend' },
+      { id: '14', name: 'Website CrashLoopBackOff', level: 'Beginner', svc: 'website', status: 'down', msg: '✗ Website container in CrashLoopBackOff — site unavailable', downMsg: 'Website pod crash-looping; no active endpoints' },
     ];
 
     const activeIssues = new Set();
@@ -420,10 +421,10 @@
       } else {
         services[iss.svc].status = iss.status;
         services[iss.svc].msg = iss.msg;
-        /* OOM cascades to frontend */
+        /* OOM cascades to website */
         if (iss.id === '02' && iss.svc === 'backend') {
-          services.frontend.status = 'down';
-          services.frontend.msg = '✗ Cascading failure — backend OOM, frontend unavailable';
+          services.website.status = 'down';
+          services.website.msg = '✗ Cascading failure — backend OOM, website unavailable';
         }
       }
 
@@ -452,7 +453,7 @@
         } else {
           const reasons = {
             backend: ['Connection refused — no active pod endpoints', 'DNS NXDOMAIN — service not found', 'Timeout — pod unreachable', 'Connection reset by peer'],
-            frontend: ['Connection refused — frontend pod down', '502 Bad Gateway — no upstream', 'Timeout — service unavailable'],
+            website: ['Connection refused — website pod down', '502 Bad Gateway — no upstream', 'Timeout — service unavailable'],
             redis: ['Connection refused — Redis not responding', 'ERR max number of clients reached'],
             mysql: ['Connection refused — MySQL not ready', 'ERROR 2003 (HY000): Can\'t connect to MySQL'],
           };
@@ -490,7 +491,7 @@
 
     /* ---- Topology ---- */
     function updateTopology() {
-      for (const key of ['frontend', 'backend', 'redis', 'mysql']) {
+      for (const key of ['website', 'backend', 'redis', 'mysql']) {
         const rect = document.getElementById('rect-' + key);
         const node = document.getElementById('node-' + key);
         const s = services[key].status;
@@ -515,7 +516,7 @@
       else { pill.className = 'pill pill-up'; pill.textContent = '● All Systems Operational'; }
 
       /* critical banner for website down */
-      if (services.frontend.status === 'down') {
+      if (services.website.status === 'down') {
         banner.classList.add('visible');
       } else {
         banner.classList.remove('visible');
