@@ -1,0 +1,41 @@
+version: 0.2
+
+phases:
+  install:
+    commands:
+      - echo "Installing Terraform..."
+      - TERRAFORM_VERSION="1.9.8"
+      - curl -fsSL -o terraform.zip https://releases.hashicorp.com/terraform/${TERRAFORM_VERSION}/terraform_${TERRAFORM_VERSION}_linux_amd64.zip
+      - unzip -o terraform.zip -d /usr/local/bin
+      - terraform version
+
+  pre_build:
+    commands:
+      - echo "Starting Terraform apply..."
+      - echo "Current directory:"
+      - pwd
+      - echo "Terraform files:"
+      - find . -name "*.tf" -type f
+      - echo "Initializing Terraform providers..."
+      - terraform init -input=false
+
+  build:
+    commands:
+      - echo "Applying Terraform plan from previous stage..."
+      - terraform apply -auto-approve tfplan
+
+  post_build:
+    commands:
+      - echo "Terraform apply completed."
+      - echo "Exporting kubeconfig for verification..."
+      - mkdir -p kubeconfig
+      - terraform output -raw kubeconfig > kubeconfig/kubeconfig.yaml || echo "Warning: Could not export kubeconfig"
+      - ls -la kubeconfig/
+
+artifacts:
+  files:
+    - kubeconfig/kubeconfig.yaml
+    - '**/*.tf'
+    - '**/*.tfvars'
+    - tfplan
+  name: terraform-apply-artifact
