@@ -9,3 +9,15 @@ Thumbs.db
 # Kubernetes
 kubectl-*.pid
 *.tmp
+
+# Terraform
+*.tfstate
+*.tfstate.backup
+.terraform/
+tfplan
+terraform.tfvars
+.terraform.lock.hcl
+
+# Kubeconfig
+kubeconfig.yaml
+.kube/
