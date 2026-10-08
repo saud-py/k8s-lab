@@ -1,0 +1,42 @@
+version: 0.2
+
+phases:
+  install:
+    commands:
+      - echo "Installing Terraform..."
+      - TERRAFORM_VERSION="1.9.8"
+      - curl -fsSL -o terraform.zip https://releases.hashicorp.com/terraform/${TERRAFORM_VERSION}/terraform_${TERRAFORM_VERSION}_linux_amd64.zip
+      - unzip -o terraform.zip -d /usr/local/bin
+      - terraform version
+
+  pre_build:
+    commands:
+      - echo "Starting Terraform validation and plan..."
+      - echo "Current directory:"
+      - pwd
+      - echo "Terraform files:"
+      - find . -name "*.tf" -type f
+
+      - terraform init -input=false
+
+  build:
+    commands:
+      - echo "Running Terraform format check..."
+      - terraform fmt -check
+
+      - echo "Running Terraform validation..."
+      - terraform validate
+
+      - echo "Creating Terraform plan..."
+      - terraform plan -input=false -out=tfplan
+
+  post_build:
+    commands:
+      - echo "Terraform validation and plan completed."
+
+artifacts:
+  files:
+    - tfplan
+    - '**/*.tf'
+    - '**/*.tfvars'
+  name: terraform-plan-artifact

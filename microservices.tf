@@ -14,7 +14,7 @@ resource "kubernetes_namespace" "lab" {
 resource "kubernetes_deployment" "frontend" {
   metadata {
     name      = "frontend"
-    namespace = kubernetes_namespace.lab.metadata[0].name
+    namespace = kubernetes_namespace.lab.metadata.name
   }
 
   spec {
@@ -50,11 +50,13 @@ resource "kubernetes_deployment" "frontend" {
 resource "kubernetes_service" "frontend" {
   metadata {
     name      = "frontend"
-    namespace = kubernetes_namespace.lab.metadata[0].name
+    namespace = kubernetes_namespace.lab.metadata.name
   }
 
   spec {
-    selector = kubernetes_deployment.frontend.spec[0].template[0].metadata[0].labels[0]
+    selector = {
+      app = "frontend"
+    }
 
     type = "LoadBalancer"
 
@@ -70,7 +72,7 @@ resource "kubernetes_service" "frontend" {
 resource "kubernetes_deployment" "backend" {
   metadata {
     name      = "backend"
-    namespace = kubernetes_namespace.lab.metadata[0].name
+    namespace = kubernetes_namespace.lab.metadata.name
   }
 
   spec {
@@ -108,11 +110,13 @@ resource "kubernetes_deployment" "backend" {
 resource "kubernetes_service" "backend" {
   metadata {
     name      = "backend"
-    namespace = kubernetes_namespace.lab.metadata[0].name
+    namespace = kubernetes_namespace.lab.metadata.name
   }
 
   spec {
-    selector = kubernetes_deployment.backend.spec[0].template[0].metadata[0].labels[0]
+    selector = {
+      app = "backend"
+    }
 
     port {
       port        = 5678
