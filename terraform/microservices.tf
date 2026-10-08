@@ -55,19 +55,12 @@ resource "kubernetes_service" "frontend" {
 
   spec {
     selector = kubernetes_deployment.frontend.spec[0].template[0].metadata[0].labels[0]
-    port     = 80
 
     type = "LoadBalancer"
 
-    # Expose via NodePort if no LoadBalancer is available (optional, can be removed)
     port {
       port        = 80
       target_port = 80
-    }
-
-    # Optionally add load balancer ingress
-    load_balancer_ingress {
-      # In a real environment you might specify IPs here, but we leave it blank for auto-allocation
     }
   }
 }
@@ -120,7 +113,11 @@ resource "kubernetes_service" "backend" {
 
   spec {
     selector = kubernetes_deployment.backend.spec[0].template[0].metadata[0].labels[0]
-    port     = 5678
+
+    port {
+      port        = 5678
+      target_port = 5678
+    }
 
     type = "ClusterIP"
   }
