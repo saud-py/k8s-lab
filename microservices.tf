@@ -14,7 +14,7 @@ resource "kubernetes_namespace" "lab" {
 resource "kubernetes_deployment" "frontend" {
   metadata {
     name      = "frontend"
-    namespace = kubernetes_namespace.lab.metadata.name
+    namespace = kubernetes_namespace.lab.metadata[0].name
   }
 
   spec {
@@ -50,7 +50,7 @@ resource "kubernetes_deployment" "frontend" {
 resource "kubernetes_service" "frontend" {
   metadata {
     name      = "frontend"
-    namespace = kubernetes_namespace.lab.metadata.name
+    namespace = kubernetes_namespace.lab.metadata[0].name
   }
 
   spec {
@@ -72,7 +72,7 @@ resource "kubernetes_service" "frontend" {
 resource "kubernetes_deployment" "backend" {
   metadata {
     name      = "backend"
-    namespace = kubernetes_namespace.lab.metadata.name
+    namespace = kubernetes_namespace.lab.metadata[0].name
   }
 
   spec {
@@ -110,7 +110,7 @@ resource "kubernetes_deployment" "backend" {
 resource "kubernetes_service" "backend" {
   metadata {
     name      = "backend"
-    namespace = kubernetes_namespace.lab.metadata.name
+    namespace = kubernetes_namespace.lab.metadata[0].name
   }
 
   spec {
