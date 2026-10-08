@@ -1,0 +1,23 @@
+# Local .tfvars files
+*.tfvars
+*.tfvars.json
+
+# Terraform files
+.terraform/
+terraform.tfstate
+terraform.tfstate.backup
+
+# Kubernetes
+.kube/
+kubeconfig.yaml
+
+# Logs
+*.log
+
+# Override files
+override.tf
+override.tf.json
+
+# CLI configuration files
+.terraformrc
+terraform.rc
