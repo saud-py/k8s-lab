@@ -27,10 +27,10 @@
 terraform {
   backend "s3" {
     # UPDATE THESE VALUES BEFORE RUNNING terraform init
-    bucket         = "saud-tf-state"           # e.g., "k8s-lab-tfstate"
+    bucket         = "saud-tf-state" # e.g. "k8s-lab-tfstate"
     key            = "eks/low-cost-dev-cluster/terraform.tfstate"
-    region         = "ap-southeast-2"                # match your AWS region
-    dynamodb_table = "YOUR-LOCK-TABLE"               # e.g., "terraform-lock"
+    region         = "ap-southeast-2" # match your AWS region
+    dynamodb_table = "terraform-lock" # e.g. "terraform-lock"
     encrypt        = true
   }
 }
