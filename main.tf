@@ -274,14 +274,14 @@ resource "helm_release" "metrics_server" {
   set = [
     {
       name  = "argus.enabled"
-      value = "false" # Disable ArgoUS for cost savings
+      value = "false"
     },
     {
       name  = "kubeTLS.enabled"
       value = "true"
     },
     {
-      name = "metrics"
+      name  = "metrics"
       value = jsonencode({
         apiVersion = "v1"
         endpoints  = [{ port = "https", scheme = "https" }]
@@ -289,7 +289,7 @@ resource "helm_release" "metrics_server" {
     },
     {
       name  = "args"
-      value = ["--kubelet-preferred-address-types=InternalIP", "--kubelet-insecure-tls=false"]
+      value = "{--kubelet-preferred-address-types=InternalIP,--kubelet-insecure-tls=false}"
     }
   ]
 
