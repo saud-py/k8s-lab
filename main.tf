@@ -281,7 +281,7 @@ resource "helm_release" "metrics_server" {
       value = "true"
     },
     {
-      name  = "metrics"
+      name = "metrics"
       value = jsonencode({
         apiVersion = "v1"
         endpoints  = [{ port = "https", scheme = "https" }]
