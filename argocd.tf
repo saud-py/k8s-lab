@@ -147,7 +147,7 @@ resource "helm_release" "argocd" {
 
 output "argocd_server_hostname" {
   description = "Argo CD server LoadBalancer hostname"
-  value       = kubernetes_service.argocd_server.status[0].load_balancer[0].ingress[0].hostname
+  value       = data.kubernetes_service.argocd_server.status[0].load_balancer[0].ingress[0].hostname
 }
 
 # Get the Argo CD server service (created by Helm)
