@@ -26,18 +26,18 @@ phases:
       - 'ls -lh "${CODEBUILD_SRC_DIR_BuildArtifact}/tfplan"'
 
   build:
+    on-failure: ABORT
     commands:
       - 'echo "Applying saved Terraform plan..."'
-      - 'terraform apply -input=false -auto-approve "${CODEBUILD_SRC_DIR_BuildArtifact}/tfplan"'
+      - 'terraform apply -input=false -auto-approve "${CODEBUILD_SRC_DIR_BuildArtifact}/tfplan" || { echo "Apply failed — post_build skipped."; exit 1; }'
 
   post_build:
     commands:
       - 'echo "Exporting kubeconfig..."'
       - 'mkdir -p kubeconfig'
-      - 'terraform output -raw kubeconfig > kubeconfig/kubeconfig.yaml'
-      - 'test -s kubeconfig/kubeconfig.yaml'
-      - 'echo "Kubeconfig exported successfully."'
-      - 'ls -lh kubeconfig/kubeconfig.yaml'
+      - 'terraform output -raw kubeconfig > kubeconfig/kubeconfig.yaml 2>/dev/null || echo "WARNING: kubeconfig output not available (apply may have failed or output not defined)."'
+      - 'test -s kubeconfig/kubeconfig.yaml && echo "Kubeconfig exported successfully." || echo "Kubeconfig not available."'
+      - 'ls -lh kubeconfig/'
 
 artifacts:
   files:

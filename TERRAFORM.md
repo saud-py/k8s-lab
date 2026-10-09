@@ -14,13 +14,81 @@ This Terraform configuration deploys:
 - Terraform >= 1.0
 - AWS CLI configured with appropriate credentials
 - kubectl (for interacting with the cluster after creation)
+- S3 bucket and DynamoDB table for Terraform state (see Remote Backend Setup below)
+
+## Remote Backend Setup (REQUIRED for CI/CD)
+
+**This must be done once before any Terraform operations.** The configuration uses an S3 backend with DynamoDB locking to persist state across CodeBuild runs.
+
+### 1. Create S3 bucket and DynamoDB table
+
+```bash
+# Set your values
+export TF_STATE_BUCKET="k8s-lab-tfstate-<your-account-id>"  # globally unique
+export TF_LOCK_TABLE="terraform-lock"
+export TF_REGION="ap-southeast-2"
+
+# Create S3 bucket with versioning and encryption
+aws s3api create-bucket \
+  --bucket "$TF_STATE_BUCKET" \
+  --region "$TF_REGION" \
+  --create-bucket-configuration LocationConstraint="$TF_REGION"
+
+aws s3api put-bucket-versioning \
+  --bucket "$TF_STATE_BUCKET" \
+  --versioning-configuration Status=Enabled
+
+aws s3api put-bucket-encryption \
+  --bucket "$TF_STATE_BUCKET" \
+  --server-side-encryption-configuration '{"Rules":[{"ApplyServerSideEncryptionByDefault":{"SSEAlgorithm":"AES256"}}]}'
+
+# Create DynamoDB lock table (PAY_PER_REQUEST billing)
+aws dynamodb create-table \
+  --table-name "$TF_LOCK_TABLE" \
+  --attribute-definitions AttributeName=LockID,AttributeType=S \
+  --key-schema AttributeName=LockID,KeyType=HASH \
+  --billing-mode PAY_PER_REQUEST
+```
+
+### 2. Update `backend.tf` with your values
+
+Edit `backend.tf` and replace the placeholders:
+```hcl
+bucket         = "k8s-lab-tfstate-<your-account-id>"
+dynamodb_table = "terraform-lock"
+region         = "ap-southeast-2"
+```
+
+### 3. Grant CodeBuild IAM permissions
+
+Attach this policy to your CodeBuild service role:
+```json
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": ["s3:GetObject", "s3:PutObject", "s3:DeleteObject", "s3:ListBucket"],
+      "Resource": [
+        "arn:aws:s3:::k8s-lab-tfstate-<your-account-id>",
+        "arn:aws:s3:::k8s-lab-tfstate-<your-account-id>/*"
+      ]
+    },
+    {
+      "Effect": "Allow",
+      "Action": ["dynamodb:GetItem", "dynamodb:PutItem", "dynamodb:DeleteItem", "dynamodb:DescribeTable"],
+      "Resource": "arn:aws:dynamodb:ap-southeast-2:<your-account-id>:table/terraform-lock"
+    }
+  ]
+}
+```
+
+---
 
 ## Quick Start
 
 ```bash
-cd terraform
-
-# Initialize Terraform
+# Initialize Terraform (will prompt to migrate state if any local exists)
 terraform init
 
 # Review the plan
