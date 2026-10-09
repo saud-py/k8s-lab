@@ -67,6 +67,56 @@ resource "kubernetes_service" "frontend" {
   }
 }
 
+# ── HPA for Frontend (CPU/Memory-based scaling) ──────────────────────────────
+
+# ⚠️ HPA requires metrics-server installed in the cluster
+# Install with: kubectl apply -f https://github.com/kubernetes-sigs/metrics-server/releases/latest/download/components.yaml
+
+resource "kubernetes_horizontal_pod_autoscaler" "frontend" {
+  metadata {
+    name      = "frontend-hpa"
+    namespace = kubernetes_namespace.lab.metadata[0].name
+  }
+
+  spec {
+    scale_target_ref {
+      api_version = "apps/v1"
+      kind        = "Deployment"
+      name        = kubernetes_deployment.frontend.metadata[0].name
+    }
+
+    min_replicas = 2
+
+    max_replicas = 10
+
+    metric {
+      type = "Resource"
+
+      resource {
+        name = "cpu"
+
+        target {
+          type                = "Utilization"
+          average_utilization = 65 # Scale when CPU > 65%
+        }
+      }
+    }
+
+    metric {
+      type = "Resource"
+
+      resource {
+        name = "memory"
+
+        target {
+          type                = "Utilization"
+          average_utilization = 75 # Scale when memory > 75%
+        }
+      }
+    }
+  }
+}
+
 # ── Backend Deployment (hashicorp/http-echo) ─────────────────────────────────
 
 resource "kubernetes_deployment" "backend" {
@@ -124,5 +174,55 @@ resource "kubernetes_service" "backend" {
     }
 
     type = "ClusterIP"
+  }
+}
+
+# ── HPA for Backend (CPU/Memory-based scaling) ──────────────────────────────
+
+# ⚠️ HPA requires metrics-server installed in the cluster
+# Install with: kubectl apply -f https://github.com/kubernetes-sigs/metrics-server/releases/latest/download/components.yaml
+
+resource "kubernetes_horizontal_pod_autoscaler" "backend" {
+  metadata {
+    name      = "backend-hpa"
+    namespace = kubernetes_namespace.lab.metadata[0].name
+  }
+
+  spec {
+    scale_target_ref {
+      api_version = "apps/v1"
+      kind        = "Deployment"
+      name        = kubernetes_deployment.backend.metadata[0].name
+    }
+
+    min_replicas = 2
+
+    max_replicas = 10
+
+    metric {
+      type = "Resource"
+
+      resource {
+        name = "cpu"
+
+        target {
+          type                = "Utilization"
+          average_utilization = 70 # Scale when CPU > 70%
+        }
+      }
+    }
+
+    metric {
+      type = "Resource"
+
+      resource {
+        name = "memory"
+
+        target {
+          type                = "Utilization"
+          average_utilization = 80 # Scale when memory > 80%
+        }
+      }
+    }
   }
 }

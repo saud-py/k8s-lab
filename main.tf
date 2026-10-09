@@ -250,3 +250,49 @@ provider "kubernetes" {
   token                  = data.aws_eks_cluster_auth.this.token
   cluster_ca_certificate = base64decode(data.aws_eks_cluster.this.certificate_authority[0].data)
 }
+
+provider "helm" {
+  kubernetes {
+    host                   = data.aws_eks_cluster.this.endpoint
+    token                  = data.aws_eks_cluster_auth.this.token
+    cluster_ca_certificate = base64decode(data.aws_eks_cluster.this.certificate_authority[0].data)
+  }
+}
+
+# ── Metrics Server (required for HPA metrics) ─────────────────────────────────
+
+# Install metrics-server via Helm so that Horizontal Pod Autoscalers have CPU/mem
+# metrics available. Required for the HPAs defined in microservices.tf.
+resource "helm_release" "metrics_server" {
+  name       = "metrics-server"
+  repository = "https://kubernetes-sigs.github.io/metrics-server"
+  chart      = "metrics-server"
+  version    = "3.13.0"
+
+  namespace = "kube-system"
+
+  set {
+    name  = "argus.enabled"
+    value = "false" # Disable ArgoUS for cost savings
+  }
+
+  set {
+    name  = "kubeTLS.enabled"
+    value = "true"
+  }
+
+  set {
+    name = "metrics"
+    value = jsonencode({
+      apiVersion = "v1"
+      endpoints  = [{ port = "https", scheme = "https" }]
+    })
+  }
+
+  set {
+    name  = "args"
+    value = ["--kubelet-preferred-address-types=InternalIP", "--kubelet-insecure-tls=false"]
+  }
+
+  depends_on = [kubernetes_namespace.argocd]
+}

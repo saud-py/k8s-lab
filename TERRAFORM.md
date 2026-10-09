@@ -34,7 +34,7 @@ terraform apply
 
 | Variable | Description | Default |
 |----------|-------------|---------|
-| `aws_region` | AWS region | `us-west-2` |
+| `aws_region` | AWS region | `ap-southeast-2` |
 | `cluster_name` | EKS cluster name | `low-cost-dev-cluster` |
 | `cluster_version` | Kubernetes version | `1.31` |
 | `node_instance_type` | Worker node instance type | `t3.micro` |
