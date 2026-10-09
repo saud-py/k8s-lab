@@ -23,85 +23,74 @@ resource "helm_release" "argocd" {
   wait_for_jobs = true
 
   # Values for production-ready, cost-optimized setup
-  set {
-    name  = "global.domain"
-    value = "argocd.${var.cluster_name}.example.com" # Replace with your domain
-  }
-
-  set {
-    name  = "server.service.type"
-    value = "LoadBalancer" # Exposes Argo CD UI via AWS NLB
-  }
-
-  set {
-    name  = "server.ingress.enabled"
-    value = "false" # We'll use LoadBalancer instead for simplicity
-  }
-
-  # Disable some components to reduce cost (optional)
-  set {
-    name  = "applicationSet.enabled"
-    value = "false"
-  }
-
-  set {
-    name  = "notifications.enabled"
-    value = "false"
-  }
-
-  set {
-    name  = "dex.enabled"
-    value = "false" # Disable Dex if not using SSO
-  }
-
-  # Resource limits for cost control
-  set {
-    name  = "server.resources.limits.cpu"
-    value = "500m"
-  }
-
-  set {
-    name  = "server.resources.limits.memory"
-    value = "512Mi"
-  }
-
-  set {
-    name  = "server.resources.requests.cpu"
-    value = "100m"
-  }
-
-  set {
-    name  = "server.resources.requests.memory"
-    value = "128Mi"
-  }
-
-  set {
-    name  = "repoServer.resources.limits.cpu"
-    value = "500m"
-  }
-
-  set {
-    name  = "repoServer.resources.limits.memory"
-    value = "512Mi"
-  }
-
-  set {
-    name  = "repoServer.resources.requests.cpu"
-    value = "100m"
-  }
-
-  set {
-    name  = "repoServer.resources.requests.memory"
-    value = "128Mi"
-  }
+  set = [
+    {
+      name  = "global.domain"
+      value = "argocd.${var.cluster_name}.example.com" # Replace with your domain
+    },
+    {
+      name  = "server.service.type"
+      value = "LoadBalancer" # Exposes Argo CD UI via AWS NLB
+    },
+    {
+      name  = "server.ingress.enabled"
+      value = "false" # We'll use LoadBalancer instead for simplicity
+    },
+    {
+      name  = "applicationSet.enabled"
+      value = "false"
+    },
+    {
+      name  = "notifications.enabled"
+      value = "false"
+    },
+    {
+      name  = "dex.enabled"
+      value = "false" # Disable Dex if not using SSO
+    },
+    {
+      name  = "server.resources.limits.cpu"
+      value = "500m"
+    },
+    {
+      name  = "server.resources.limits.memory"
+      value = "512Mi"
+    },
+    {
+      name  = "server.resources.requests.cpu"
+      value = "100m"
+    },
+    {
+      name  = "server.resources.requests.memory"
+      value = "128Mi"
+    },
+    {
+      name  = "repoServer.resources.limits.cpu"
+      value = "500m"
+    },
+    {
+      name  = "repoServer.resources.limits.memory"
+      value = "512Mi"
+    },
+    {
+      name  = "repoServer.resources.requests.cpu"
+      value = "100m"
+    },
+    {
+      name  = "repoServer.resources.requests.memory"
+      value = "128Mi"
+    }
+  ]
 
   # Admin password - CHANGE THIS! Use a secret in production
   # Initial admin password is auto-generated; retrieve with:
   # kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 -d
-  set_sensitive {
-    name  = "configs.params.server.insecure"
-    value = "true" # For dev only; use TLS in production
-  }
+  set_sensitive = [
+    {
+      name  = "configs.params.server.insecure"
+      value = "true" # For dev only; use TLS in production
+    }
+  ]
 
   depends_on = [kubernetes_namespace.argocd]
 }

@@ -271,28 +271,27 @@ resource "helm_release" "metrics_server" {
 
   namespace = "kube-system"
 
-  set {
-    name  = "argus.enabled"
-    value = "false" # Disable ArgoUS for cost savings
-  }
-
-  set {
-    name  = "kubeTLS.enabled"
-    value = "true"
-  }
-
-  set {
-    name = "metrics"
-    value = jsonencode({
-      apiVersion = "v1"
-      endpoints  = [{ port = "https", scheme = "https" }]
-    })
-  }
-
-  set {
-    name  = "args"
-    value = ["--kubelet-preferred-address-types=InternalIP", "--kubelet-insecure-tls=false"]
-  }
+  set = [
+    {
+      name  = "argus.enabled"
+      value = "false" # Disable ArgoUS for cost savings
+    },
+    {
+      name  = "kubeTLS.enabled"
+      value = "true"
+    },
+    {
+      name = "metrics"
+      value = jsonencode({
+        apiVersion = "v1"
+        endpoints  = [{ port = "https", scheme = "https" }]
+      })
+    },
+    {
+      name  = "args"
+      value = ["--kubelet-preferred-address-types=InternalIP", "--kubelet-insecure-tls=false"]
+    }
+  ]
 
   depends_on = [kubernetes_namespace.argocd]
 }
