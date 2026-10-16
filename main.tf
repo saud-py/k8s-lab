@@ -14,6 +14,10 @@ resource "aws_vpc" "main" {
   enable_dns_hostnames = true
 
   tags = merge(var.tags, { Name = "${var.cluster_name}-vpc" })
+
+  lifecycle {
+    prevent_destroy = true
+  }
 }
 
 resource "aws_internet_gateway" "igw" {
@@ -138,6 +142,10 @@ resource "aws_iam_role" "eks_cluster" {
   assume_role_policy = data.aws_iam_policy_document.eks_cluster.json
 
   tags = var.tags
+
+  lifecycle {
+    prevent_destroy = true
+  }
 }
 
 resource "aws_iam_role_policy_attachment" "eks_cluster_AmazonEKSClusterPolicy" {
@@ -165,6 +173,10 @@ resource "aws_iam_role" "eks_nodegroup" {
   assume_role_policy = data.aws_iam_policy_document.eks_nodegroup.json
 
   tags = var.tags
+
+  lifecycle {
+    prevent_destroy = true
+  }
 }
 
 resource "aws_iam_role_policy_attachment" "eks_nodegroup_AmazonEKSWorkerNodePolicy" {
@@ -205,6 +217,11 @@ resource "aws_eks_cluster" "this" {
   ]
 
   tags = merge(var.tags, { Name = var.cluster_name })
+
+  lifecycle {
+    prevent_destroy = true
+    ignore_changes  = [vpc_config]
+  }
 }
 
 # ── EKS Node Group ───────────────────────────────────────────────────────────
