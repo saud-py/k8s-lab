@@ -1,3 +1,7 @@
+# ── AWS Caller Identity Data Source ─────────────────────────────────────────
+
+data "aws_caller_identity" "current" {}
+
 # ── ALB Ingress Controller ──────────────────────────────────────────────────
 
 # Install the AWS ALB Ingress Controller via Helm
