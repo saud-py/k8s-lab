@@ -19,7 +19,7 @@ resource "helm_release" "argocd" {
   namespace  = kubernetes_namespace.argocd.metadata[0].name
 
   # Wait for deployment to be ready (timeout in seconds)
-  timeout       = 600
+  timeout       = 900
   wait_for_jobs = true
 
   # Values for production-ready, cost-optimized setup

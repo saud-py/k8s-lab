@@ -298,15 +298,12 @@ resource "helm_release" "metrics_server" {
       value = "true"
     },
     {
-      name = "metrics"
-      value = jsonencode({
-        apiVersion = "v1"
-        endpoints  = [{ port = "https", scheme = "https" }]
-      })
+      name  = "kubelet-preferred-address-types"
+      value = "InternalIP"
     },
     {
-      name  = "args"
-      value = "{--kubelet-preferred-address-types=InternalIP,--kubelet-insecure-tls=false}"
+      name  = "kubelet-insecure-tls"
+      value = "false"
     }
   ]
 
