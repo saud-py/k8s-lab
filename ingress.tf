@@ -13,45 +13,39 @@ resource "helm_release" "aws_load_balancer_controller" {
 
   namespace = "kube-system"
 
-  set {
-    name  = "clusterName"
-    value = aws_eks_cluster.this.name
-  }
-
-  set {
-    name  = "serviceAccount.create"
-    value = "true"
-  }
-
-  set {
-    name  = "serviceAccount.name"
-    value = "aws-load-balancer-controller"
-  }
-
-  set {
-    name  = "image.tag"
-    value = "v2.8.2"
-  }
-
-  set {
-    name  = "replicaCount"
-    value = "2"
-  }
-
-  set {
-    name  = "podLabels.app.kubernetes.io/name"
-    value = "aws-load-balancer-controller"
-  }
-
-  # IAM role for service account (IRSA)
-  set {
-    name  = "serviceAccount.annotations.eks\\.amazonaws\\.com/role-arn"
-    value = aws_iam_role.aws_load_balancer_controller.arn
-  }
+  set = [
+    {
+      name  = "clusterName"
+      value = aws_eks_cluster.this.name
+    },
+    {
+      name  = "serviceAccount.create"
+      value = "true"
+    },
+    {
+      name  = "serviceAccount.name"
+      value = "aws-load-balancer-controller"
+    },
+    {
+      name  = "image.tag"
+      value = "v2.8.2"
+    },
+    {
+      name  = "replicaCount"
+      value = "2"
+    },
+    {
+      name  = "podLabels.app.kubernetes.io/name"
+      value = "aws-load-balancer-controller"
+    },
+    {
+      name  = "serviceAccount.annotations.eks\\.amazonaws\\.com/role-arn"
+      value = aws_iam_role.aws_load_balancer_controller.arn
+    }
+  ]
 
   depends_on = [
     aws_iam_role_policy_attachment.aws_load_balancer_controller_AWSLoadBalancerControllerIAMPolicy,
-    aws_iam_role_policy_attachment.aws_load_balancer_controller_AmazonEKS_CNI_Policy,
   ]
 }
 
