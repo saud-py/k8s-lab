@@ -1,3 +1,7 @@
+# ── AWS Caller Identity Data Source ─────────────────────────────────────────
+
+data "aws_caller_identity" "current" {}
+
 # ── ALB Ingress Controller ──────────────────────────────────────────────────
 
 # Install the AWS ALB Ingress Controller via Helm
@@ -43,6 +47,22 @@ resource "helm_release" "aws_load_balancer_controller" {
   depends_on = [
     aws_iam_role_policy_attachment.aws_load_balancer_controller_AWSLoadBalancerControllerIAMPolicy,
   ]
+}
+
+# ── IAM Role for ALB Ingress Controller Service Account (IRSA) ────────
+data "aws_iam_policy_document" "alb_controller_assume_role" {
+  statement {
+    actions = ["sts:AssumeRoleWithWebIdentity"]
+    principals {
+      type        = "Federated"
+      identifiers = ["arn:aws:iam::${data.aws_caller_identity.current.account_id}:oidc-provider/${data.aws_eks_cluster.this.identity[0].oidc[0].issuer}"]
+    }
+    condition {
+      test     = "StringEquals"
+      variable = "${data.aws_eks_cluster.this.identity[0].oidc[0].issuer}:sub"
+      values   = ["system:serviceaccount:kube-system:aws-load-balancer-controller"]
+    }
+  }
 }
 
 resource "aws_iam_role" "aws_load_balancer_controller" {
