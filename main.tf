@@ -176,6 +176,7 @@ resource "aws_iam_role" "eks_nodegroup" {
 
   lifecycle {
     prevent_destroy = true
+    create_before_destroy = true
   }
 }
 
