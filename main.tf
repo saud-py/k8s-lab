@@ -175,7 +175,7 @@ resource "aws_iam_role" "eks_nodegroup" {
   tags = var.tags
 
   lifecycle {
-    prevent_destroy = true
+    prevent_destroy       = true
     create_before_destroy = true
   }
 }
