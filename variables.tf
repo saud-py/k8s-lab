@@ -17,9 +17,9 @@ variable "cluster_version" {
 }
 
 variable "node_instance_type" {
-  description = "EC2 instance type for worker nodes (low-cost options: t3.micro, t3.small)"
+  description = "EC2 instance type for worker nodes. t3.micro (1GB) is too small for Argo CD + ALB controller + metrics-server + apps, so t3.small is the practical minimum."
   type        = string
-  default     = "t3.micro"
+  default     = "t3.small"
 }
 
 variable "desired_capacity" {
@@ -31,7 +31,7 @@ variable "desired_capacity" {
 variable "max_capacity" {
   description = "Maximum number of worker nodes"
   type        = number
-  default     = 3
+  default     = 4
 }
 
 variable "min_capacity" {

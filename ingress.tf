@@ -35,10 +35,6 @@ resource "helm_release" "aws_load_balancer_controller" {
       value = "2"
     },
     {
-      name  = "podLabels.app.kubernetes.io/name"
-      value = "aws-load-balancer-controller"
-    },
-    {
       name  = "serviceAccount.annotations.eks\\.amazonaws\\.com/role-arn"
       value = aws_iam_role.aws_load_balancer_controller.arn
     }
