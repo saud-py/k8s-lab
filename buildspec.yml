@@ -8,6 +8,12 @@ phases:
       - curl -fsSL -o terraform.zip https://releases.hashicorp.com/terraform/${TERRAFORM_VERSION}/terraform_${TERRAFORM_VERSION}_linux_amd64.zip
       - unzip -o terraform.zip -d /usr/local/bin
       - terraform version
+      - echo "Installing Helm..."
+      - export HELM_VERSION=v3.16.2
+      - curl -fsSL -o helm.tar.gz "https://get.helm.sh/helm-${HELM_VERSION}-linux-amd64.tar.gz"
+      - tar -xzf helm.tar.gz
+      - mv linux-amd64/helm /usr/local/bin/helm
+      - helm version
 
   pre_build:
     commands:
@@ -18,6 +24,19 @@ phases:
       - find . -name "*.tf" -type f
 
       - terraform init -input=false
+
+      # ── Adopt existing Helm releases into Terraform state ──────────────
+      # A Helm release that exists in the cluster but is missing from
+      # Terraform state makes `helm install` fail with "cannot re-use a
+      # name that is still in use". Importing the existing release into
+      # state BEFORE planning means the plan reflects reality and the
+      # saved tfplan stays valid through the apply stage.
+      - echo "Adopting any existing Helm releases into Terraform state..."
+      - aws eks update-kubeconfig --name saud-eks-lab --region ap-southeast-2 --alias adopt 2>/dev/null || echo "Cluster not reachable - skipping adoption"
+      - export KUBECONFIG=/root/.kube/config
+      - 'for SPEC in "helm_release.argocd:argocd:argocd" "helm_release.aws_load_balancer_controller:aws-load-balancer-controller:kube-system" "helm_release.metrics_server:metrics-server:kube-system"; do TF_ADDR=$(echo $SPEC | cut -d: -f1); REL=$(echo $SPEC | cut -d: -f2); NS=$(echo $SPEC | cut -d: -f3); if terraform state list 2>/dev/null | grep -q "^${TF_ADDR}$"; then echo "[SKIP] $TF_ADDR already in state"; elif helm status $REL -n $NS >/dev/null 2>&1; then echo "Importing existing release $NS/$REL into $TF_ADDR"; terraform import "$TF_ADDR" "$NS/$REL" || echo "  import failed - will retry next run"; else echo "No existing release $REL - nothing to import"; fi; done'
+      - echo "Terraform state contents:"
+      - terraform state list 2>/dev/null || echo "(state is empty)"
 
   build:
     commands:
